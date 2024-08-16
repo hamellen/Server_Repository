@@ -5,13 +5,27 @@
 #include <atomic>
 #include <mutex>
 
-class SpinLock {
+class SpinLock {//무한대기
 
 public:
 
+	void lock() {
+
+		bool expected = false;//_locked 값이 되기를 바라는 값 
+		bool desired=true;//expected 와는 다른 값
+		//_locked 값이 expected 값이 같아지는 순간 _locked에 desired 값 삽입 
+		while (_locked.compare_exchange_strong(expected, desired)==false) {//_locked 값이 expected 값과 다르다면 false를 반환하며 무한 뺑뺑이 
+			expected = false;
+		}
+	}
+
+	void unlock() {
+
+		_locked.store(false);
+	}
 
 private:
-
+	atomic<bool> _locked = false;
 
 };
 
@@ -52,7 +66,10 @@ void Sub() {
 }
 int value = 0;
 vector<int32> v;
+SpinLock spinlock;
 mutex m;//lock 기능, lock 과 unlock 기능을 자주 쓸경우 느려질수 있음 
+
+
 
 template<typename T>//커스텀 lockguard
 class LockGuard {
@@ -91,7 +108,7 @@ void Push() {
 void Plus(){
 	
 	for (int32 i = 0; i < 1000; i++) {
-		lock_guard<mutex> guard(m);
+		lock_guard<SpinLock> guard(spinlock);
 		value++;
 	}
 
@@ -100,7 +117,7 @@ void Plus(){
 void Minus() {
 
 	for (int32 i = 0; i < 1000; i++) {
-		lock_guard<mutex> guard(m);
+		lock_guard<SpinLock> guard(spinlock);
 		value--;
 	}
 
