@@ -4,7 +4,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-
+#include <windows.h>
 class SpinLock {//무한대기
 
 public:
@@ -16,6 +16,7 @@ public:
 		//_locked 값이 expected 값이 같아지는 순간 _locked에 desired 값 삽입 
 		while (_locked.compare_exchange_strong(expected, desired)==false) {//_locked 값이 expected 값과 다르다면 false를 반환하며 무한 뺑뺑이 
 			expected = false;
+			this_thread::sleep_for(chrono::milliseconds(100));//1초후에 다시 작업하러 옴,컨텍스트 스위칭 발생
 		}
 	}
 
@@ -123,13 +124,48 @@ void Minus() {
 
 }
 
+queue<int32> q;
+HANDLE handle;
+//스핀락은 무한뺑뺑이,sleep은 몇초간 잠든후에 다시 가능한지 확인이라서 운빨
+//이벤트
+
+void Producer()
+{
+	while (true) {
+
+		{
+			unique_lock<mutex> lock(m);
+			q.push(100);
+			
+		}
+		::SetEvent(handle);//시그널 상태로 바꿈 
+		this_thread::sleep_for(100ms);
+	}
+}
+
+void Consumer()
+{
+	while (true) {
+		::WaitForSingleObject(handle, INFINITE);//대기 모드 ,시그널 모드가 되면 대기 모드 해체,자동리셋모드 일시 시그널 모드가 되면 바로 논시그널 모드로 자동전환 
+		unique_lock<mutex> lock(m);
+		if (q.empty() == false) {
+			int32 data = q.front();
+			q.pop();
+			cout << data << endl;
+		}
+
+	}
+}
 int main()//메인 쓰레드 
 {
-	thread t1(Plus);
-	thread t2(Minus);
 	
+	handle=::CreateEvent(NULL, FALSE, FALSE, NULL);//커널 오브젝트/자동리셋 모드,논 시그널 상태 
+
+	thread t1(Producer);
+	thread t2(Consumer);
+
 	t1.join();
 	t2.join();
 
-	cout << value << endl;
+	::CloseHandle(handle);
 }
