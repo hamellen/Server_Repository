@@ -3,8 +3,20 @@
   "WorkspaceRootPath": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexStack.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|solutionrelative:GameServer\\MutexStack.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|solutionrelative:GameServer\\MutexQueue.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\GameServer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|solutionrelative:GameServer\\GameServer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{F03FE732-3473-4BBD-94B1-D4916C3B4A15}|GameServer\\GameServer.vcxproj|solutionrelative:GameServer\\MutexQueue.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{CAC2B122-7251-4759-8D77-04CD547B7348}|ServerCore\\ServerCore.vcxproj|E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\ServerCore\\CorePch.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -30,7 +42,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 158,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,7 +50,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "MutexStack.h",
+              "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexStack.h",
+              "RelativeDocumentMoniker": "GameServer\\MutexStack.h",
+              "ToolTip": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexStack.h",
+              "RelativeToolTip": "GameServer\\MutexStack.h",
+              "ViewState": "AQIAABIAAAAAAAAAAAAAACMAAAA4AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-08-21T10:45:48.95Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MutexQueue.h",
+              "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.h",
+              "RelativeDocumentMoniker": "GameServer\\MutexQueue.h",
+              "ToolTip": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.h",
+              "RelativeToolTip": "GameServer\\MutexQueue.h",
+              "ViewState": "AQIAAAwAAAAAAAAAAAAAACQAAAAPAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-08-21T10:45:32.981Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "pch.h",
               "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\ServerCore\\pch.h",
               "RelativeDocumentMoniker": "ServerCore\\pch.h",
@@ -50,7 +88,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "CorePch.h",
               "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\ServerCore\\CorePch.h",
               "RelativeDocumentMoniker": "ServerCore\\CorePch.h",
@@ -63,7 +101,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "pch.h",
               "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\pch.h",
               "RelativeDocumentMoniker": "GameServer\\pch.h",
@@ -81,20 +119,20 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "GameServer.cpp",
               "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\GameServer.cpp",
               "RelativeDocumentMoniker": "GameServer\\GameServer.cpp",
               "ToolTip": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\GameServer.cpp",
               "RelativeToolTip": "GameServer\\GameServer.cpp",
-              "ViewState": "AQIAAJIAAAAAAAAAAAAAAKcAAAALAAAA",
+              "ViewState": "AQIAACkAAAAAAAAAAAAUwJ4AAAAaAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-08-15T03:23:21.497Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "pch.cpp",
               "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\pch.cpp",
               "RelativeDocumentMoniker": "GameServer\\pch.cpp",
@@ -103,6 +141,19 @@
               "ViewState": "AQIAAAAAAAAAAAAAAADwvwAAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-08-15T03:27:57.91Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MutexQueue.cpp",
+              "DocumentMoniker": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.cpp",
+              "RelativeDocumentMoniker": "GameServer\\MutexQueue.cpp",
+              "ToolTip": "E:\\Lookis\\Server_Repository\\\uD658\uACBD \uC124\uC815_\uC18C\uC2A4\uCF54\uB4DC\\GameServer\\MutexQueue.cpp",
+              "RelativeToolTip": "GameServer\\MutexQueue.cpp",
+              "ViewState": "AQIAAAAAAAAAAAAAAADwvwAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-08-21T10:45:59.935Z",
+              "EditorCaption": ""
             }
           ]
         }

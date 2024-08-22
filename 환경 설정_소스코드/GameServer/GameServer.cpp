@@ -5,6 +5,7 @@
 #include <atomic>
 #include <mutex>
 #include <windows.h>
+#include <future>
 class SpinLock {//무한대기
 
 public:
@@ -35,7 +36,7 @@ private:
 
 atomic<int32> sum = 0;//공유 데이터, 서로 다른 쓰레드가 쓰기를 할려할시 이미 점유한 쓰레드가 있으면 거부 당함
 //쓰레드는 병렬로 실행되므로 무엇이 먼저 끝나는지는 알수 없음 
-
+//생각보다 많이 느림,꼭 필요할때만 써야됨
 	//thread t;//쓰레드 생성 및 실질적인 쓰레드 연결 없음 
 	//t=thread(HelloThread2,10);//쓰레드 연결
 	//t.join();//메인 쓰레드가 종료되기 이전에 부속쓰레드의 작동이 보장될수 있도록 메인쓰레드를 기다리도록 하는  함수
@@ -126,6 +127,7 @@ void Minus() {
 
 queue<int32> q;
 HANDLE handle;
+condition_variable cv;//커널 아닌 유저 오브젝트 
 //스핀락은 무한뺑뺑이,sleep은 몇초간 잠든후에 다시 가능한지 확인이라서 운빨
 //이벤트
 
@@ -138,16 +140,21 @@ void Producer()
 			q.push(100);
 			
 		}
-		::SetEvent(handle);//시그널 상태로 바꿈 
-		this_thread::sleep_for(100ms);
+		//cv.notify_all();//자고 있는 모든 쓰레드 깨우기 
+		cv.notify_one();//자고 있는 하나의 쓰레드 깨우기 
+		//::SetEvent(handle);//시그널 상태로 바꿈 
+		//this_thread::sleep_for(100ms);
 	}
 }
 
 void Consumer()
 {
 	while (true) {
-		::WaitForSingleObject(handle, INFINITE);//대기 모드 ,시그널 모드가 되면 대기 모드 해체,자동리셋모드 일시 시그널 모드가 되면 바로 논시그널 모드로 자동전환 
+
+		//::WaitForSingleObject(handle, INFINITE);//대기 모드 ,시그널 모드가 되면 대기 모드 해체,자동리셋모드 일시 시그널 모드가 되면 바로 논시그널 모드로 자동전환 
 		unique_lock<mutex> lock(m);
+		cv.wait(lock, []() {return q.empty() == false; });//lock을 잡고 조건이 맞으면 빠져나와서 코드 진행,
+		//조건이 맞지 않는다면 lock을 풀어주고 대기 모드 
 		if (q.empty() == false) {
 			int32 data = q.front();
 			q.pop();
@@ -156,16 +163,42 @@ void Consumer()
 
 	}
 }
+
+thread_local int32 TLS_storage=0;//쓰레드마다의 고유공간
 int main()//메인 쓰레드 
 {
 	
-	handle=::CreateEvent(NULL, FALSE, FALSE, NULL);//커널 오브젝트/자동리셋 모드,논 시그널 상태 
+	//handle=::CreateEvent(NULL, FALSE, FALSE, NULL);//커널 오브젝트/자동리셋 모드,논 시그널 상태 
+	//condition_variable 덕분에 쓸일이 없어짐
 
-	thread t1(Producer);
+	/*thread t1(Producer);
 	thread t2(Consumer);
 
 	t1.join();
-	t2.join();
+	t2.join();*/
 
-	::CloseHandle(handle);
+	//::CloseHandle(handle);
+
+	//동기-메인 쓰레드가 호출된 즉시 함수 내부로 들어가 return 후 다시 밖으로 나와 작업개시 
+	//비동기
+	//future<int64> future=async(launch::async,함수이름)
+	// async- 별도의 쓰레드를 만들어 시행 | deferred - 단일 쓰레드 모드로 get호출시 함수 실행
+	//future.get() - 결과물 얻기 
+	//future_status - future 함수 객체의 완료 상태 
+	//promise,packaged_task 보조 기능
+
+	atomic < bool > flag = false;
+	//flag.is_lock_free() true이면 lock없이 변경 가능 false이면 lock 설정하면서 변경해야하며 atomic에서 자동으로 해줌
+	flag.store(true, memory_order_seq_cst);
+	flag.load(memory_order_seq_cst);
+
+	//bool prev=flag.exchange(true) - 이전 값 추출과 값 수정을 동시에 하는 함수 
+
+	//memory model 
+	//Sequentially Consistent(seq_cst)-  컴파일러 최적화 여지 적음-직관적-가시성 및 코드 재배치 문제 해결 
+	//Acquire-Release(acquire,release)
+	//Relaxed(relaxed)- 컴파일러 최적화 여지 많음,코드 재배치 자주 일어남 ,거의 활용하지 않음
+
+	//atomic 클래스로 만든 변수를 이용해 멀티 쓰레드를 돌릴경우 일반변수의 가시성 확보 
+
 }
