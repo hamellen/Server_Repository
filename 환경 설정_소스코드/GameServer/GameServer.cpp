@@ -6,6 +6,12 @@
 #include <mutex>
 #include <windows.h>
 #include <future>
+
+#include <WinSock2.h>
+#include <mswsock.h>
+#include <ws2tcpip.h>
+
+#pragma comment(lib,"ws2_32.lib")
 class SpinLock {//무한대기
 
 public:
@@ -187,10 +193,10 @@ int main()//메인 쓰레드
 	//future_status - future 함수 객체의 완료 상태 
 	//promise,packaged_task 보조 기능
 
-	atomic < bool > flag = false;
+	//atomic < bool > flag = false;
 	//flag.is_lock_free() true이면 lock없이 변경 가능 false이면 lock 설정하면서 변경해야하며 atomic에서 자동으로 해줌
-	flag.store(true, memory_order_seq_cst);
-	flag.load(memory_order_seq_cst);
+	//flag.store(true, memory_order_seq_cst);
+	//flag.load(memory_order_seq_cst);
 
 	//bool prev=flag.exchange(true) - 이전 값 추출과 값 수정을 동시에 하는 함수 
 
@@ -200,5 +206,46 @@ int main()//메인 쓰레드
 	//Relaxed(relaxed)- 컴파일러 최적화 여지 많음,코드 재배치 자주 일어남 ,거의 활용하지 않음
 
 	//atomic 클래스로 만든 변수를 이용해 멀티 쓰레드를 돌릴경우 일반변수의 가시성 확보 
+	// 
+	// 
+	
+	//윈도우 소켓 초기화 
+	WSAData wsData;
+	::WSAStartup(MAKEWORD(2, 2), &wsData);
 
+	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);//클라이언트와 최초로 연결될 소켓 /안내원 
+
+
+	//서버 주소 설정(ip주소 및 포트번호)
+	SOCKADDR_IN serverAddr;//서버 주소 ipv4
+	::memset(&serverAddr, 0, sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
+	serverAddr.sin_port = ::htons(7777);//서버에서 열어준 포트번호
+
+	::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));//리슨소켓과 포트번호 동기화 
+
+	::listen(listenSocket, 10);//서버에 들어올려는 대기열 한도
+
+	while (true) {
+		SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
+		::memset(&serverAddr, 0, sizeof(serverAddr));
+		int addrLen = sizeof(clientAddr);
+		SOCKET clientSocket=::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);//요청 수락 및 클라이언트의 소켓 와 연결된 소켓 
+
+		//실질적 연결됨 
+		char ipAddress[16];
+		::inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
+		cout << "Client Connected IP= " << ipAddress << endl;
+
+		while (true) {
+			char recvBuffer[100];
+			int32 recvlen=::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+
+			cout << "Recv Data! len: " << recvlen << endl;
+			cout << "Recv Data! data: " << recvBuffer << endl;
+		}
+	}
+
+	::WSACleanup();//윈도우 소켓 종료  
 }
