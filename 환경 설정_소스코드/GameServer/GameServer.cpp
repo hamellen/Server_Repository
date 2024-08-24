@@ -6,7 +6,6 @@
 #include <mutex>
 #include <windows.h>
 #include <future>
-
 #include <WinSock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
@@ -171,6 +170,8 @@ void Consumer()
 }
 
 thread_local int32 TLS_storage=0;//쓰레드마다의 고유공간
+
+
 int main()//메인 쓰레드 
 {
 	
@@ -209,43 +210,112 @@ int main()//메인 쓰레드
 	// 
 	// 
 	
-	//윈도우 소켓 초기화 
+	//소켓 옵션설정
+	//level-옵션을 해석하고 처리할 주체(소켓 코드-SOL_SOCKET,IPV4-IPPROTO_IP,TCP_프로토콜-IPPROTO_TCP)
+	//optname(SO_KEEPALIVE-TCP 전용으로 주기적으로 연결상태 확인 여부 체크,SO_LINGER-closesocket을 할시 송신버퍼에 있는 데이터를 보낼 여유 설정  )
+	//(SO_SNDBUF-송신버퍼크기,SO_RCVBUF-수신버퍼크기)
+	//::shutdown()-closesocket()같이 완전히 끊지 않고 데이터를 보내지 않는다는 의사를 표시할때 사용
+	//TCP_NODELAY-데이터가 충분히 크면 보내고,그렇지않으면 데이터가 충분히 쌓일때까지 대기 
+
+	//블로킹 소켓(accept-접속한 클라가 있을때,connect-서버 접속 성공했을때,send-요청한 데이터를 송신버퍼에 복사,recv-수신버퍼에 도착한 데이터를 유저레벨에 복사)
+
+
+
+	//윈도우 소켓 초기화 //tcp 블로킹버전
+	//WSAData wsData;
+	//::WSAStartup(MAKEWORD(2, 2), &wsData);
+
+	//SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);//클라이언트와 최초로 연결될 소켓 /안내원 
+
+
+
+	////서버 주소 설정(ip주소 및 포트번호)
+	//SOCKADDR_IN serverAddr;//서버 주소 ipv4
+	//::memset(&serverAddr, 0, sizeof(serverAddr));
+	//serverAddr.sin_family = AF_INET;
+	//serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
+	//serverAddr.sin_port = ::htons(7777);//서버에서 열어준 포트번호
+
+	//::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));//리슨소켓과 포트번호 동기화 
+
+	//::listen(listenSocket, 10);//서버에 들어올려는 대기열 한도
+
+	//while (true) {
+	//	SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
+	//	::memset(&serverAddr, 0, sizeof(serverAddr));
+	//	int addrLen = sizeof(clientAddr);
+	//	SOCKET clientSocket=::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);//요청 수락 및 클라이언트의 소켓 와 연결된 소켓 
+
+	//	//실질적 연결됨 
+	//	char ipAddress[16];
+	//	::inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
+	//	cout << "Client Connected IP= " << ipAddress << endl;
+
+	//	while (true) {
+	//		char recvBuffer[100];
+	//		int32 recvlen=::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+
+	//		cout << "Recv Data! len: " << recvlen << endl;
+	//		cout << "Recv Data! data: " << recvBuffer << endl;
+	//	}
+	//}
+
+	//::WSACleanup();//윈도우 소켓 종료  
+
+	//TCP 논블로킹 버전
 	WSAData wsData;
 	::WSAStartup(MAKEWORD(2, 2), &wsData);
 
-	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);//클라이언트와 최초로 연결될 소켓 /안내원 
+	SOCKET listenSocket = ::socket(AF_INET, SOCK_STREAM, 0);
 
+	u_long on = 1;
+	::ioctlsocket(listenSocket, FIONBIO, &on);//논블로킹 모드 작동
 
-	//서버 주소 설정(ip주소 및 포트번호)
-	SOCKADDR_IN serverAddr;//서버 주소 ipv4
+	SOCKADDR_IN serverAddr;
 	::memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = ::htonl(INADDR_ANY);
-	serverAddr.sin_port = ::htons(7777);//서버에서 열어준 포트번호
+	serverAddr.sin_addr.S_un.S_addr = ::htonl(INADDR_ANY);
+	serverAddr.sin_port = ::htons(7777);
 
-	::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));//리슨소켓과 포트번호 동기화 
+	::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
+	::listen(listenSocket, 10);
 
-	::listen(listenSocket, 10);//서버에 들어올려는 대기열 한도
-
+	SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
+	int32 addrLen = sizeof(clientAddr);
+	
 	while (true) {
-		SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
-		::memset(&serverAddr, 0, sizeof(serverAddr));
-		int addrLen = sizeof(clientAddr);
-		SOCKET clientSocket=::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);//요청 수락 및 클라이언트의 소켓 와 연결된 소켓 
+		SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
 
-		//실질적 연결됨 
-		char ipAddress[16];
-		::inet_ntop(AF_INET, &clientAddr.sin_addr, ipAddress, sizeof(ipAddress));
-		cout << "Client Connected IP= " << ipAddress << endl;
+		if (clientSocket == INVALID_SOCKET) {
+
+			if (::WSAGetLastError() == WSAEWOULDBLOCK) {//문제 상황아님 
+				continue;
+			}
+			break;
+		}
+		cout << "client connected" << endl;
 
 		while (true) {
-			char recvBuffer[100];
-			int32 recvlen=::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+		
+			char recvBuffer[1000];
+			int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+			if (recvLen == SOCKET_ERROR) {
+				
+				if (::WSAGetLastError() == WSAEWOULDBLOCK) {
 
-			cout << "Recv Data! len: " << recvlen << endl;
-			cout << "Recv Data! data: " << recvBuffer << endl;
+					continue;
+				}
+				break;
+			}
+			else if (recvLen == 0) {//연결끊김
+
+				break;
+			}
+			cout << "Recv Data Len= " << recvLen << endl;
+			cout << "Recv Data= "<< recvBuffer<<endl;
 		}
+
 	}
 
-	::WSACleanup();//윈도우 소켓 종료  
+	::WSACleanup();
 }
