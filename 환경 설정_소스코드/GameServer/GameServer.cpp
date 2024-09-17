@@ -171,6 +171,14 @@ void Consumer()
 
 thread_local int32 TLS_storage=0;//쓰레드마다의 고유공간
 
+const int32 BufferSize = 1000;
+struct Session {
+
+	SOCKET socket=INVALID_SOCKET;
+	char recvBuffer[BufferSize] = {};
+	int32 recvBytes = 0;
+	int32 sendBytes = 0;
+};
 
 int main()//메인 쓰레드 
 {
@@ -262,7 +270,7 @@ int main()//메인 쓰레드
 
 	//::WSACleanup();//윈도우 소켓 종료  
 
-	//TCP 논블로킹 버전
+	
 	WSAData wsData;
 	::WSAStartup(MAKEWORD(2, 2), &wsData);
 
@@ -278,43 +286,113 @@ int main()//메인 쓰레드
 	serverAddr.sin_port = ::htons(7777);
 
 	::bind(listenSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr));
-	::listen(listenSocket, 10);
+	::listen(listenSocket, SOMAXCONN);
 
-	SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
-	int32 addrLen = sizeof(clientAddr);
-	
+
+	//TCP 논블로킹 버전
+	//SOCKADDR_IN clientAddr;//서버에 접속한 클라이언트 주소 
+	//int32 addrLen = sizeof(clientAddr);
+	//
+	//while (true) { 무한반복
+	//	SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+
+	//	if (clientSocket == INVALID_SOCKET) {
+
+	//		if (::WSAGetLastError() == WSAEWOULDBLOCK) {//문제 상황아님 
+	//			continue;
+	//		}
+	//		break;
+	//	}
+	//	cout << "client connected" << endl;
+
+	//	while (true) {무한반복
+	//	
+	//		char recvBuffer[1000];
+	//		int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+	//		if (recvLen == SOCKET_ERROR) {
+	//			
+	//			if (::WSAGetLastError() == WSAEWOULDBLOCK) {
+
+	//				continue;
+	//			}
+	//			break; 
+	//		}
+	//		else if (recvLen == 0) {//연결끊김
+
+	//			break;
+	//		}
+	//		cout << "Recv Data Len= " << recvLen << endl;
+	//		cout << "Recv Data= "<< recvBuffer<<endl;
+	//	}
+
+	//}
+
+	//-------select 모델---------------------
+	//write 나 read 를 하기전에 자동으로 가능한때를 알려주는  select 함수 
+	//FD_ZERO-fd_set 비우기 ,FD_SET-fd_set에 소켓 넣기 ,FD_CLR-소켓 제거 
+
+	vector<Session> sessions;
+	sessions.reserve(100);
+
+	fd_set reads;
+	fd_set writes;
+
 	while (true) {
-		SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+	
+		FD_ZERO(&reads);
+		FD_ZERO(&writes);
 
-		if (clientSocket == INVALID_SOCKET) {
-
-			if (::WSAGetLastError() == WSAEWOULDBLOCK) {//문제 상황아님 
-				continue;
+		FD_SET(listenSocket, &reads);
+		
+		for (Session& s : sessions) {
+		
+			if (s.recvBytes <= s.sendBytes) {
+				FD_SET(s.socket, &reads);
 			}
+			else {
+				FD_SET(s.socket, &writes);
+			}
+		
+		}
+		int32 retval=::select(0, &reads, &writes, nullptr, nullptr);
+		if (retval == SOCKET_ERROR) {
 			break;
 		}
-		cout << "client connected" << endl;
 
-		while (true) {
-		
-			char recvBuffer[1000];
-			int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
-			if (recvLen == SOCKET_ERROR) {
-				
-				if (::WSAGetLastError() == WSAEWOULDBLOCK) {
+		//listener 소켓 체크 
+		if (FD_ISSET(listenSocket, &reads)) {
 
-					continue;
-				}
-				break;
+			SOCKADDR_IN clientAddr;
+			int32 addrLen = sizeof(clientAddr);
+			SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+			if (clientSocket != INVALID_SOCKET) {
+				cout << "client connected" << endl;
+				sessions.push_back(Session{ clientSocket});
 			}
-			else if (recvLen == 0) {//연결끊김
-
-				break;
-			}
-			cout << "Recv Data Len= " << recvLen << endl;
-			cout << "Recv Data= "<< recvBuffer<<endl;
 		}
 
+		for (Session& s : sessions) {
+			//read
+			if (FD_ISSET(s.socket, &reads)) {
+				int32 recvLen = ::recv(s.socket, s.recvBuffer, BufferSize, 0);
+				if (recvLen <= 0) {
+					continue;
+				}
+				s.recvBytes = recvLen;
+			}
+
+			//write
+			if (FD_ISSET(s.socket, &writes)) {
+			
+				int32 sendLen = ::send(s.socket, &s.recvBuffer[s.sendBytes], s.recvBytes - s.sendBytes, 0);
+				
+				s.sendBytes += sendLen;
+				if (s.recvBytes == s.sendBytes) {
+					s.recvBytes = 0;
+					s.sendBytes = 0;
+				}
+			}
+		}
 	}
 
 	::WSACleanup();

@@ -86,10 +86,37 @@ int main()
 			break;//진짜 에러 
 		}
 
-
+		cout << "Send Data Len= " << sizeof(sendBuffer) << endl;
 		
+		while (true) {
+
+			char recvBuffer[1000];
+			int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
+
+			if (recvLen == SOCKET_ERROR) {
+
+				if (::WSAGetLastError() == WSAEWOULDBLOCK)
+					continue;
+
+				break;
+			}
+			else if (recvLen == 0) {
+
+				break;
+			}
+
+			cout << "Recv Data Len= " << recvLen << endl;
+			break;
+
+		}
+
+
 		this_thread::sleep_for(1s);
 	}
+
+	
+
+
 	::closesocket(clientSocket);//소켓 정리 
 	::WSACleanup();//윈도우 소켓 종료  
 }
