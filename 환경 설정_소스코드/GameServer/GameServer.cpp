@@ -328,72 +328,104 @@ int main()//메인 쓰레드
 	//}
 
 	//-------select 모델---------------------
+	// 효율이 좋지는 않음,동기식
 	//write 나 read 를 하기전에 자동으로 가능한때를 알려주는  select 함수 
 	//FD_ZERO-fd_set 비우기 ,FD_SET-fd_set에 소켓 넣기 ,FD_CLR-소켓 제거 
 
+	vector<WSAEVENT> wsaEvents;
 	vector<Session> sessions;
 	sessions.reserve(100);
 
-	fd_set reads;
-	fd_set writes;
+	WSAEVENT listenEvent = ::WSACreateEvent();
+	wsaEvents.push_back(listenEvent);
+	sessions.push_back(Session{listenSocket});
+	if (WSAEventSelect(listenSocket, listenEvent, FD_ACCEPT | FD_CLOSE) == SOCKET_ERROR)//관찰시작
+		return 0;
 
+	
 	while (true) {
 	
-		FD_ZERO(&reads);
-		FD_ZERO(&writes);
-
-		FD_SET(listenSocket, &reads);
 		
-		for (Session& s : sessions) {
-		
-			if (s.recvBytes <= s.sendBytes) {
-				FD_SET(s.socket, &reads);
-			}
-			else {
-				FD_SET(s.socket, &writes);
-			}
-		
-		}
-		int32 retval=::select(0, &reads, &writes, nullptr, nullptr);
-		if (retval == SOCKET_ERROR) {
-			break;
+		int32 index=::WSAWaitForMultipleEvents(wsaEvents.size(), &wsaEvents[0], FALSE, WSA_INFINITE, FALSE);//하나라도 준비되면 활성화 
+		if (index == WSA_WAIT_FAILED) {
+			continue;
 		}
 
-		//listener 소켓 체크 
-		if (FD_ISSET(listenSocket, &reads)) {
+		index -= WSA_WAIT_EVENT_0;
+
+
+		WSANETWORKEVENTS networkEvents;
+		if (::WSAEnumNetworkEvents(sessions[index].socket, wsaEvents[index], &networkEvents) == SOCKET_ERROR)//준비된 이벤트 추출
+			continue;
+
+		if (networkEvents.lNetworkEvents & FD_ACCEPT) {
+
+			if (networkEvents.iErrorCode[FD_ACCEPT_BIT] != 0)
+				continue;
 
 			SOCKADDR_IN clientAddr;
 			int32 addrLen = sizeof(clientAddr);
-			SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-			if (clientSocket != INVALID_SOCKET) {
+
+			SOCKET clientSocket=::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+			if (clientSocket != INVALID_SOCKET) {//연결 확정
 				cout << "client connected" << endl;
-				sessions.push_back(Session{ clientSocket});
+
+				WSAEVENT clientEvent = ::WSACreateEvent();
+				wsaEvents.push_back(clientEvent);
+				sessions.push_back(Session{ clientSocket });
+				if (WSAEventSelect(clientSocket, clientEvent, FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR)//관찰시작
+					return 0;
 			}
 		}
+		//client session 체크 
+		if (networkEvents.lNetworkEvents & FD_READ || networkEvents.lNetworkEvents & FD_WRITE) {
 
-		for (Session& s : sessions) {
-			//read
-			if (FD_ISSET(s.socket, &reads)) {
-				int32 recvLen = ::recv(s.socket, s.recvBuffer, BufferSize, 0);
-				if (recvLen <= 0) {
+			if ((networkEvents.lNetworkEvents & FD_READ) && (networkEvents.iErrorCode[FD_READ_BIT]!=0))
+				continue;
+
+			if ((networkEvents.lNetworkEvents & FD_WRITE) && (networkEvents.iErrorCode[FD_WRITE_BIT] != 0))
+				continue;
+
+			Session& s = sessions[index];
+
+			if (s.recvBytes == 0) {
+
+				int32 recvLen = ::recv(s.socket, s.recvBuffer,BUFSIZ, 0);
+				if (recvLen == SOCKET_ERROR && ::WSAGetLastError() != WSAEWOULDBLOCK) {
 					continue;
 				}
+
 				s.recvBytes = recvLen;
+				cout << "Recv Data Len= " << recvLen << endl;
 			}
 
-			//write
-			if (FD_ISSET(s.socket, &writes)) {
-			
+			if (s.recvBytes > s.sendBytes) {
+
 				int32 sendLen = ::send(s.socket, &s.recvBuffer[s.sendBytes], s.recvBytes - s.sendBytes, 0);
-				
+				if (sendLen == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
+					continue;
+				}
+
 				s.sendBytes += sendLen;
+
 				if (s.recvBytes == s.sendBytes) {
 					s.recvBytes = 0;
 					s.sendBytes = 0;
 				}
+				cout << "Send Data Len=" << sendLen << endl;
 			}
 		}
-	}
 
+		//FD_CLOSE
+		
+		if (networkEvents.lNetworkEvents & FD_CLOSE) {
+		
+			
+		}
+
+	}
+	//WSAEventSelect 모델,비동기식
+	//생성-WSACreateEvent 삭제-WSACloseEvent 신호상태 감지-WSAWaitForMultipleEvents
+	//구체적인 네트워크 이벤트-WSAEnumNetworkEvents
 	::WSACleanup();
 }

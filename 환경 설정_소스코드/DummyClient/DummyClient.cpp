@@ -42,6 +42,7 @@ int main()
 	//::WSACleanup();//윈도우 소켓 종료  
 
 	//논블로킹
+	this_thread::sleep_for(1s);
 	WSAData wsData;
 	::WSAStartup(MAKEWORD(2, 2), &wsData);
 
